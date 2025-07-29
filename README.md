@@ -77,10 +77,8 @@ Visit `http://localhost:5000` in your browser.
 
 ```
 ghost-voice-assistant/
-├── static/
-│   └── style.css
-├── templates/
-│   └── index.html
+├── style.css
+├── index.html
 ├── app.py
 └── README.md
 ```
