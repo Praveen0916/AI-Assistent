@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Jarvis AI - Voice Assistant</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="static/style.css" />
+</head>
+<body>
+
+<canvas id="matrix-canvas"></canvas>
+<div class="container">
+  <h1>Hi, I'm <span class="highlight">Ghost</span></h1>
+  <p>Click the mic and start speaking...</p>
+  <button id="start-btn">🎤 Start Listening</button>
+  <div id="spoken-text" class="spoken-text"></div>
+  <div id="response" class="response-box"></div>
+</div>
+
+  <script>
+    const canvas = document.getElementById("matrix-canvas");
+    const ctx = canvas.getContext("2d");
+
+    canvas.height = window.innerHeight;
+    canvas.width = window.innerWidth;
+
+    const letters = "アカサタナハマヤラワ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const fontSize = 14;
+    const columns = canvas.width / fontSize;
+
+    const drops = Array(Math.floor(columns)).fill(1);
+
+    function draw() {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = "#00ffe1";
+      ctx.font = fontSize + "px monospace";
+
+      for (let i = 0; i < drops.length; i++) {
+        const text = letters.charAt(Math.floor(Math.random() * letters.length));
+        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+        if (drops[i] * fontSize > canvas.height || Math.random() > 0.95) {
+          drops[i] = 0;
+        }
+        drops[i]++;
+      }
+    }
+
+    setInterval(draw, 50);
+  </script>
+
+  <script>
+  const startBtn = document.getElementById("start-btn");
+  const spokenTextDiv = document.getElementById("spoken-text");
+  const responseDiv = document.getElementById("response");
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const recognition = new SpeechRecognition();
+  recognition.lang = 'en-US';
+  recognition.interimResults = false;
+
+  // 🎤 On button click, start listening
+  startBtn.addEventListener("click", () => {
+    responseDiv.textContent = "Listening...";
+    recognition.start();
+  });
+
+  // 🎙️ When voice input is received
+  recognition.onresult = async function (event) {
+    const transcript = event.results[0][0].transcript;
+    spokenTextDiv.textContent = "You said: " + transcript;
+
+    const formData = new FormData();
+    formData.append("command", transcript);
+
+    try {
+      const res = await fetch('/process', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      const responseText = data.response;
+
+      // Show response
+      responseDiv.textContent = responseText;
+
+      // 🔊 Speak the response using SpeechSynthesis
+      const utterance = new SpeechSynthesisUtterance(responseText);
+      utterance.lang = 'en-US';
+      utterance.rate = 1;
+      utterance.pitch = 1;
+      speechSynthesis.speak(utterance);
+
+    } catch (err) {
+      responseDiv.textContent = "Error connecting to assistant.";
+    }
+  };
+
+  recognition.onerror = function (event) {
+    responseDiv.textContent = "Voice error: " + event.error;
+  };
+</script>
+
+</body>
+</html>
